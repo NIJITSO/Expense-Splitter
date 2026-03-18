@@ -1,0 +1,10 @@
+node_modules
+.npm
+.env
+.git
+.github
+terraform
+ansible
+k8s
+Projet_DevOps_Rapport.md
+brain
