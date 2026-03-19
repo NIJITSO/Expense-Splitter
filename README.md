@@ -1,152 +1,242 @@
-# 🚀 Guide Exhaustif de Déploiement DevOps : "Expense Splitter"
 
-Voici le guide détaillé sans absolument **RIEN omettre**. On y retrouve chaque erreur rencontrée (et sa solution), chaque manipulation de clé, et les étapes réelles qu'on a entreprises pour contourner les limitations Windows/Azure !
+# 🚀 Guide Exhaustif A-Z : Création du Workflow DevOps & CI/CD "Expense Splitter"
 
-## 📌 Prérequis initiaux
-1. **Azure for Students** activé.
-2. Un compte **Docker Hub** (`nijitso`).
-3. **WSL (Ubuntu)** installé sur Windows (et non le WSL Docker Desktop).
-4. Terraform, Ansible et Azure CLI (`az`) installés dans Ubuntu.
-5. Une paire de clés SSH générée pour Azure :
-   ```bash
-   ssh-keygen -m PEM -t rsa -b 4096 -f ~/.ssh/id_rsa
-   ```
+Ce rapport détaillé et compréhensif documente de **A à Z** comment recréer, configurer et maîtriser l'intégralité du workflow DevOps de l'application Expense Splitter. Que vous partiez de zéro ou que vous souhaitiez comprendre les moindres rouages de la pipeline d'intégration et déploiement continus (CI/CD), ce guide couvre toutes les étapes de l'infrastructure jusqu'à l'automatisation.
 
 ---
 
-## 🏗️ Étape 1 : L'Infrastructure (Terraform)
-Objectif : Créer le réseau, le pare-feu, et les 2 serveurs (Master et Worker).
+## 🏗️ Phase 1 : Préparation du Terrain & Architecture
 
-**Le piège rencontré `SkuNotAvailable` :**
-Le forfait étudiant bloque l'accès à énormément de serveurs dans les régions d'Europe et US. Les serveurs de type `Standard_B1s` étaient tous en rupture de stock.
-**La solution :** On a modifié le fichier `terraform/variables.tf` pour changer l'emplacement vers l'Europe du Nord (`northeurope`) et augmenter la taille des machines vers `Standard_D2s_v3`.
+Avant d'écrire la moindre ligne de code pour le workflow, l'écosystème doit être prêt. Ce workflow repose sur 5 piliers fondamentaux :
+1. **L'Infrastructure (Terraform)** : La création des serveurs.
+2. **La Configuration (Ansible)** : L'installation de Kubernetes.
+3. **La Conteneurisation (Docker)** : L'empaquetage de l'application.
+4. **L'Orchestration (Kubernetes)** : Le pilotage des conteneurs.
+5. **L'Automatisation (GitHub Actions)** : Le cerveau qui relie le tout (Le Workflow CI/CD).
 
-**Le pare-feu (NSG) :**
-Terraform a été programmé pour ouvrir 4 ports vitaux : 22 (SSH), 6443 (l'API K8s), 80 (HTTP) et **30080** (La porte Kubernetes NodePort pour le Frontend).
-
-**Le lancement :**
-```bash
-az login
-cd terraform
-terraform init
-terraform apply -auto-approve
-```
-*-> Terraform nous a craché nos deux IPs publiques Azure à la fin !*
+### 1.1 Prérequis Indispensables
+Pour démarrer, vous devez disposer des éléments suivants :
+- Un compte **Azure for Students** (ou standard) lié à la ligne de commande (`az login`).
+- Un compte **DockerHub** (par exemple `nijitso`) pour stocker vos images.
+- Un dépôt **GitHub** contenant le code source de Expense Splitter.
+- Les outils locaux : `git`, `terraform`, `ansible`, `docker`, et **WSL Ubuntu** (sur Windows).
+- Une clé SSH locale générée (`~/.ssh/id_rsa`).
 
 ---
 
-## ⚙️ Étape 2 : Le Déploiement de Kubernetes (Ansible)
-Objectif : Installer le moteur Kubernetes (K3s) sur les deux serveurs créés.
+## 🛠️ Phase 2 : Création de l'Infrastructure (Terraform & Ansible)
 
-**Le piège du terminal WSL :**
-En tapant juste `wsl` sur Windows, on tombait sur le micro-système Alpine Linux interne de Docker Desktop, où Ansible n'existait pas. **Solution :** Taper spécifiquement `wsl -d Ubuntu`.
+L'automatisation du workflow ne peut fonctionner que si les serveurs cibles existent et sont correctement configurés.
 
-**L'adaptation de l'inventaire (`ansible/inventory.ini`) :**
-On a remplacé les mots `<MASTER_PUBLIC_IP>` et `<WORKER_PUBLIC_IP>` par les vraies adresses IP données par Terraform.
+### 2.1 Provisionnement avec Terraform
+Le dossier `terraform/` contient le code pour demander à Azure de créer deux machines virtuelles (`Master` et `Worker`). 
+- Terraform va créer un réseau virtuel (`vnet`), un pare-feu (`nsg`) ouvrant les ports vitaux (22 pour SSH, 6443 pour K8s, 80 pour HTTP, 30080 pour l'application).
+- **Pour le recréer :** 
+  En exécutant `terraform apply -auto-approve`, Terraform vous renvoie les adresses **IP Publiques** de ces deux machines. Gardez-les précieusement, elles sont le cœur de votre workflow.
 
-**Le piège monstrueux de la clé SSH (`Permissions 0777 too open`) :**
-Ansible refusait de se connecter aux serveurs car il trouvait la clé de Windows (`/mnt/c/Users/...`) "trop perméable" (lecture pour tous). SSH bloque par sécurité totale.
-**La solution (Isoler la clé dans le coffre-fort Linux) :**
-```bash
-cp /mnt/c/Users/BADR/.ssh/id_rsa ~/.ssh/id_rsa
-chmod 600 ~/.ssh/id_rsa
-```
-Puis on a pointé l'inventaire Ansible vers `ansible_ssh_private_key_file="~/.ssh/id_rsa"`.
-
-**Le lancement final d'Ansible :**
-```bash
-cd ansible
-ansible-playbook -i inventory.ini playbook.yml
-```
+### 2.2 Configuration avec Ansible (Kubernetes K3s)
+Une fois les machines nues créées, il faut installer le cluster Kubernetes. L'outil Ansible va s'y connecter via SSH.
+- Vous devez placer les adresses IP récupérées avec Terraform dans le fichier [ansible/inventory.ini](file:///c:/Users/BADR/Documents/GitHub/Expense-Splitter/ansible/inventory.ini).
+- Mettez les bonnes permissions sur votre clé SSH (`chmod 600 ~/.ssh/id_rsa`).
+- Lancez `ansible-playbook -i inventory.ini playbook.yml`.
+- **Résultat :** Vos serveurs sont maintenant un cluster Kubernetes (K3s) prêt à recevoir des ordres de déploiement.
 
 ---
 
-## 📦 Étape 3 : La Mise en boîte de l'Application (Docker)
-L'application Express.js/React doit être envoyée publiquement sur Internet.
+## 📦 Phase 3 : Conceptualisation des Manifestes (Docker & Kubernetes)
 
-**Les commandes :**
-```bash
-docker login -u nijitso
-# Build (création locale)
-docker build -t nijitso/expense-splitter:latest .
-# Push (envoi sur les serveurs Docker Hub)
-docker push nijitso/expense-splitter:latest
-```
+Pour que la pipeline (le workflow) puisse déployer votre application, il faut lui expliquer "comment" empaqueter et "comment" exécuter.
 
----
+### 3.1 Le fichier Dockerfile
+Ce fichier se trouve à la racine de votre projet. Il indique comment transformer votre code Node.js/Express en une boîte étanche (conteneur) :
+- Base `node:18-alpine` (très léger).
+- Copie des dépendances ([package.json](file:///c:/Users/BADR/Documents/GitHub/Expense-Splitter/package.json)) et installation (`npm install`).
+- Copie du code source et exposition du port `5000`.
+- Commande de démarrage `npm start`.
 
-## ☸️ Étape 4 : Le Lancement sur le Cluster Azure (Kubernetes)
-Objectif : Envoyer le code source (YAML) pour ordonner à Kubernetes de télécharger l'image Docker ci-dessus et de la faire tourner avec MongoDB.
-
-**Le piège du faux nom d'image (`InvalidImageName`) :**
-Le fichier `k8s/app-deployment.yaml` avait une image appelée `<DOCKERHUB_USERNAME>/expense-splitter:latest`. Kubernetes ne devinant pas qui on est, plantait.
-**La solution :** Remplacer ce mot par `nijitso` dans le fichier Windows.
-
-**Transfert et exécution :**
-Puisque le fichier corrigé était sur Windows, il a fallu l'envoyer sur la machine Azure (Master) :
-```bash
-scp -i ~/.ssh/id_rsa k8s/app-deployment.yaml azureuser@20.107.200.206:~/k8s/
-```
-
-Puis s'y connecter pour donner l'ordre à l'Orchestrateur K8s :
-```bash
-ssh -i ~/.ssh/id_rsa azureuser@20.107.200.206
-sudo kubectl apply -f k8s/app-deployment.yaml
-```
-
-**Les commandes vitales de vérification :**
-```bash
-# Vérifier si c'est allumé (ContainerCreating -> Running) :
-sudo kubectl get pods -o wide
-
-# Vérifier où accéder au site web publiquement (le Port) :
-sudo kubectl get services
-```
-
-**Le bonus : Comment effacer et remettre la base de données MongoDB à zéro ?**
-```bash
-sudo kubectl delete pods -l app=mongo
-```
-*(Le Pod meurt, détruit son stockage emptyDir éphémère de données, et K8s le ressuscite 10 secondes plus tard sans les données).*
+### 3.2 Les Manifestes Kubernetes (`k8s/`)
+Ces fichiers YAML ordonnent au cluster quoi faire avec votre image Docker :
+- **`mongo-*.yaml` :** Déploie la base de données MongoDB, configure un volume de stockage persistant (ou temporaire `emptyDir`), et rend la base accessible dans le réseau interne sur le port 27017.
+- **`app-deployment.yaml` :** Déploie votre application (`nijitso/expense-splitter:latest`). Il injecte les variables d'environnement nécessaires pour se connecter à MongoDB.
+- **`app-service.yaml` :** Ouvre une porte NodePort (`30080`) pour que l'application soit accessible depuis le web public.
 
 ---
 
-## 🎉 Résultat et Destruction finale
-On charge le port 30080 sur notre carte réseau publique de l'ordinateur virtuel :
-**http://20.107.200.206:30080** !
+## 🤖 Phase 4 : Création du Workflow GitHub Actions de A à Z (.github/workflows)
 
-🛑 **Attention (Pour la validation du projet final) :**
-Dès que la démonstration (ou la note) est finie, il faut **TUTTÉRALEMENT DÉTRUIRE L'INFRASTRUCTURE** pour éviter de se faire facturer et ruiner le compte Microsoft étudiant :
-```bash
-cd terraform
-terraform destroy -auto-approve
+Nous arrivons au cœur du sujet : le fichier magique [.github/workflows/ci-cd.yml](file:///c:/Users/BADR/Documents/GitHub/Expense-Splitter/.github/workflows/ci-cd.yml) qui automatise absolument TOUT.
+
+### 4.1 La configuration des Secrets GitHub (Indispensable)
+Avant d'écrire le workflow, GitHub a besoin des autorisations pour parler à DockerHub et à vos serveurs Azure, sans exposer vos mots de passe dans le code source.
+
+Allez dans **GitHub > Settings > Secrets and variables > Actions > New repository secret**.
+Ajoutez ces 5 secrets :
+1. `DOCKERHUB_USERNAME` : Votre pseudo DockerHub (`nijitso`).
+2. `DOCKERHUB_TOKEN` : Un token d'accès généré depuis les paramètres de sécurité de votre compte DockerHub.
+3. `K8S_MASTER_IP` : L'adresse IP publique de votre VM Master (fournie par Terraform).
+4. `K8S_SSH_USER` : Le nom d'utilisateur SSH de la VM (généralement `azureuser`).
+5. `K8S_SSH_PRIVATE_KEY` : Le contenu littéral de votre clé privée (le contenu de votre fichier `~/.ssh/id_rsa`, qui commence par `-----BEGIN RSA PRIVATE KEY-----`).
+
+### 4.2 L'Anatomie du Workflow CI/CD ([ci-cd.yml](file:///c:/Users/BADR/Documents/GitHub/Expense-Splitter/.github/workflows/ci-cd.yml))
+
+Le workflow est divisé en **3 grands "Jobs"** (Tâches) exécutés de manière séquentielle (l'un après l'autre). Si une tâche échoue, tout s'arrête.
+
+Voici l'explication ligne par ligne de la création de ce workflow.
+
+#### L'Entête : Déclenchement
+```yaml
+name: Expense Splitter CI/CD
+on:
+  push:
+    branches: [ "main", "master" ]
 ```
+> **Explication :** Ce bloc indique à GitHub que ce workflow va déclencher les robots **uniquement** quand une modification (push) est envoyée sur la branche `main` (ou `master`).
 
 ---
 
-## 📁 L'Anatomie du Répertoire DevOps
-Pour ta soutenance de projet, voici le découpage académique de ton code Cloud. À quoi sert chaque dossier exactement ?
+#### Job 1 : Build & Test (Validation Continue)
+Ce job vérifie que votre code n'est pas cassé avant de l'envoyer en production.
+```yaml
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+```
+> **Explication :** GitHub alloue une machine virtuelle gratuite Ubuntu `ubuntu-latest`. Pour que les tests d'API Node.js puissent fonctionner, nous demandons à GitHub de lancer un mini-service MongoDB temporaire (`services: mongo:latest`) sur le port 27017.
 
-### 1. `terraform/` (Infrastructure as Code)
-Ce dossier est responsable de la **création du "matériel brut"**.
-- `main.tf` : C'est le plan de construction de l'architecture. Il demande à Azure d'allouer de la mémoire, un disque dur et une carte réseau pour le Master et le Worker, ainsi qu'un réseau interne (`vnet`).
-- `variables.tf` : Contient les paramètres ajustables (comme la région `northeurope` qu'on a pu modifier à la volée) pour éviter de tout coder en dur.
-- `outputs.tf` : Récupère les adresses IP publiques générées par Azure pour qu'on puisse les utiliser dans l'étape suivante.
+```yaml
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+```
+> **Explication :** La machine GitHub clone/télécharge votre code source.
 
-### 2. `ansible/` (Configuration as Code)
-Une fois les machines nues et vides créées sur Azure, Ansible prend le relais pour les **configurer de l'intérieur**.
-- `inventory.ini` : L'annuaire. Il indique à Ansible sur quelles adresses IP se connecter et avec quelle configuration (notamment de toujours forcer l'usage de notre clé sécurisée `~/.ssh/id_rsa`).
-- `playbook.yml` : Le script d'orchestration. Il se connecte d'abord au Master pour y installer K3s (Kubernetes allégé), puis il va chercher un jeton de sécurité généré sur le Master, puis il se connecte au Worker pour y installer la même chose et le rattacher au Master en utilisant ce jeton !
+```yaml
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+```
+> **Explication :** Installation de Node.js version 18 sur la machine GitHub, avec un système de cache pour accélérer les futurs téléchargements.
 
-### 3. `k8s/` (Kubernetes Manifests)
-Ces fichiers s'occupent de ton **Déploiement Logiciel**. Ils disent à Kubernetes "Comment" faire tourner chaque brique (frontend, backend, base de données) de façon indépendante, pour que si l'un d'eux plante sur un nœud, Kubernetes le ressuscite ailleurs automatiquement.
-- `mongo-`.yaml : Ordonne à Kubernetes de télécharger l'image officielle de MongoDB, de lui créer un stockage temporaire (`emptyDir`), et de le rendre accessible **uniquement** aux autres serveurs internes via le cluster IP (port 27017).
-- `app-`.yaml : Ordonne à K8s de télécharger *ta propre image* Node.js (`nijitso/expense-splitter`) depuis internet (Docker Hub). Puis, le "service" NodePort ouvre une vraie porte (`30080`) au monde extérieur pour qu'on t'y accède directement depuis des vrais navigateurs sur le port 80 (HTTP par défaut).
+```yaml
+      - name: Install dependencies
+        run: npm ci
 
-### 4. `.github/workflows/` (Pipeline CI/CD GitOps)
-C'est le **Robot de Déploiement** de GitHub Actions.
-- `ci-cd.yml` : Dès que tu fais un `git push` vers le serveur (GitHub), ce fichier se déclenche et commande à une machine de GitHub de re-compiler tout ton code (`npm ci`, `npm test`), puis d'assembler la nouvelle image Docker, puis de se connecter sur le profil `nijitso` pour l'envoyer sur internet. Enfin, il se lie lui-même par Internet (avec le secret de ta clé et IP que tu lui as donnés) directement sur ton serveur Master pour y lancer le `kubectl apply` mis à jour, en totale automatisation !
+      - name: Run Automated Tests (Requis)
+        env:
+          MONGO_URI: mongodb://localhost:27017/expense_test
+          PORT: 5000
+          JWT_SECRET: test_secret_key
+        run: |
+          npm start &
+          sleep 5
+          npm test
+```
+> **Explication :** On installe les paquets (`npm ci` est plus rapide/précis que `install`). On lance le serveur Node en arrière-plan (`&`), on attend 5 secondes qu'il soit prêt, et on exécute les tests unitaires/intégration (`npm test`). Les variables [env](file:///c:/Users/BADR/Documents/GitHub/Expense-Splitter/.env) ciblent la base de test éphémère.
 
-### 5. `Dockerfile` (Conteneurisation Multi-Plateforme)
-C'est la **recette de cuisine** technologique.
-Ton app Node.js a besoin de centaines de fichiers dans son `node_modules` et d'une version précise de Node. Docker prend tes fichiers sources persos, installe un mini système Alpine Linux invisible (de quelques mégaoctets !), compile tes bibliothèques, puis fabrique une boîte hermétique isolée du monde de ton ordinateur (`le conteneur`). L'avantage ultime est que grâce à ce fichier, ton app marchera à 100% de la même manière sur ton PC Windows, sur ton Mac, sur un serveur AWS et sur ton Master Azure, sans jamais avoir le moindre conflit de dépendance !
+---
+
+#### Job 2 : Empaquetage & Publication Docker (Livraison Continue)
+Une fois les tests validés, on fabrique le produit.
+```yaml
+  docker-build-push:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+```
+> **Explication :** `needs: build-and-test` est vital. Il interdit formellement à ce job de démarrer si les tests ont lamentablement échoué. Ensuite, on retélécharge le code.
+
+```yaml
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+```
+> **Explication :** La machine GitHub utilise vos secrets protégés pour se connecter à votre compte professionnel DockerHub, sans que personne ne voie vos mots de passe.
+
+```yaml
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/expense-splitter:latest
+```
+> **Explication :** Ordre ultime de compilation. GitHub lit votre [Dockerfile](file:///c:/Users/BADR/Documents/GitHub/Expense-Splitter/Dockerfile) local (`context: .`), compile l'image entière, et la téléverse automatiquement vers le serveur distant partagé (`push: true`), en l'étiquetant comme `latest` (dernière version).
+
+---
+
+#### Job 3 : Déploiement Kubernertes Zero-Downtime (Déploiement Continu)
+L'image est sur DockerHub, les serveurs Azure tournent. Il faut faire le lien.
+```yaml
+  deploy-to-k8s:
+    needs: docker-build-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+```
+> **Explication :** Exige impérativement le succès de la mise en ligne Docker. On retélécharge le code pour avoir accès au dossier `/k8s`.
+
+```yaml
+      - name: Copy k8s manifests to K3s Master
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.K8S_MASTER_IP }}
+          username: ${{ secrets.K8S_SSH_USER }}
+          key: ${{ secrets.K8S_SSH_PRIVATE_KEY }}
+          source: "k8s/*"
+          target: "/home/${{ secrets.K8S_SSH_USER }}/expense-splitter-k8s"
+```
+> **Explication :** Coup de génie de l'automatisation. Plutôt que de taper manuellement des commandes de transfert depuis notre PC, la machine GitHub agit pour nous en se connectant via SSH vers la machine Azure (`K8S_MASTER_IP`). Elle transfère tous nos plans d'architecture Kubernetes (`k8s/*`) vers le serveur Master de façon sécurisée (via SCP / Protocole de transfert SSH).
+
+```yaml
+      - name: Deploy to Kubernetes
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.K8S_MASTER_IP }}
+          username: ${{ secrets.K8S_SSH_USER }}
+          key: ${{ secrets.K8S_SSH_PRIVATE_KEY }}
+          script: |
+            sudo kubectl apply -f /home/${{ secrets.K8S_SSH_USER }}/expense-splitter-k8s/k8s/
+            sudo kubectl rollout restart deployment/expense-app
+```
+> **Explication :** Le coup de grâce. GitHub exécute à distance (sur l'ordinateur Azure) la commande de relecture des manifestes YAML (`kubectl apply`). Si nous avons par exemple ajouté la variable `jwt-secret` dans YAML, le cluster met à jour la configuration.
+Ensuite, l'ordre `rollout restart` ordonne un "Déploiement sans interruption" (Zero-downtime). Kubernetes va :
+1. Télécharger discrètement la toute dernière version Docker publiée.
+2. Démarrer le nouveau conteneur.
+3. Détruire l'ancien conteneur **seulement** quand le nouveau est 100% vital et paré à recevoir du trafic web.
+
+---
+
+## 🔬 Ce qu'il se passe lors d'un Push Concrètement
+Si vous corrigez un petit bug de l'UI et effectuez un `git push origin main`, voici le cycle de vie réel de l'opération :
+1. GitHub intercepte instantanément le Push et verrouille le code.
+2. Une machine Debian s'allume en Californie (ou ailleurs).
+3. Elle installe Node.js, clone votre base de données, installe `npm` et lance les tests (`npm test`).
+4. Si c'est au vert, elle construit votre application et l'enveloppe dans un conteneur hermétique multi-plateforme.
+5. L'image de quelques mégaoctets est injectée sur les serveurs globaux de DockerHub.
+6. La machine GitHub se connecte clandestinement (de façon chiffrée SSL) à votre serveur gratuit Azure situé en Europe du Nord.
+7. Elle envoie de nouveaux fichiers d'instructions K8s.
+8. Elle donne un ordre de "redéploiement" à l'Orchestrateur K8s de votre serveur Azure.
+9. L'application Crash ? Kubernetes s'auto-guérit. L'application tourne ? Kubernetes remplace subtilement l'ancienne par la nouvelle version.
+10. La pipeline renvoie un checkmark vert ✅ sur GitHub. L'application a été livrée avec succès !
+
+---
+
+## 🧹 Maintenance et Astuces Finales
+
+- **Debugging Pipeline :** Si le job plante au Push, allez dans l'onglet **Actions** de votre dépôt GitHub. Vous pourrez cliquer sur le point rouge ❌ du job en échec et voir précisément quelle ligne de code ou quelle variable a provoqué l'arrêt.
+- **Limites de Gratuité :** GitHub Actions limite les minutes d'exécution de pipeline mensuelles. Optimiser en limitant le cache Node et les constructions lourdes est toujours recommandé.
+- **Révocation Clé SSL :** Si votre clé privée (`K8S_SSH_PRIVATE_KEY`) fuite, générez-en immédiatement une nouvelle, recréez l'infrastructure Terraform avec la nouvelle clé et remplacez le secret dans GitHub.
+
+Fin du rapport de création Workflow de bout en bout !
