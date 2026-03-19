@@ -1,3 +1,4 @@
+
 # 🚀 Guide Exhaustif A-Z : Création du Workflow DevOps & CI/CD "Expense Splitter"
 
 Ce rapport détaillé et compréhensif documente de **A à Z** comment recréer, configurer et maîtriser l'intégralité du workflow DevOps de l'application Expense Splitter. Que vous partiez de zéro ou que vous souhaitiez comprendre les moindres rouages de la pipeline d'intégration et déploiement continus (CI/CD), ce guide couvre toutes les étapes de l'infrastructure jusqu'à l'automatisation.
