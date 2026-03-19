@@ -1,0 +1,2 @@
+sudo kubectl delete pods -l app=mongo
+delete database mongodb
