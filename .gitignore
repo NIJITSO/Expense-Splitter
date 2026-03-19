@@ -1,0 +1,15 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+.terraform.lock.hcl
+
+# Node.js
+node_modules/
+npm-debug.log*
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
