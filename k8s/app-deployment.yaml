@@ -14,8 +14,7 @@ spec:
     spec:
       containers:
       - name: expense-app
-        # REPLACE_WITH_DOCKERHUB_USERNAME
-        image: <DOCKERHUB_USERNAME>/expense-splitter:latest
+        image: nijitso/expense-splitter:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5000

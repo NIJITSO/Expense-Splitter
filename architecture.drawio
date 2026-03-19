@@ -1,0 +1,96 @@
+<mxfile host="app.diagrams.net" modified="2023-11-20T12:00:00.000Z" agent="Mozilla/5.0" etag="12345" version="22.1.2" type="device">
+  <diagram id="R2lEEEUBdFMjLlhIrx00" name="Page-1">
+    <mxGraphModel dx="1242" dy="754" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- GitHub CI/CD -->
+        <mxCell id="github_box" value="GitHub Repository &amp; CI/CD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="200" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="github_repo" value="Source Code &amp; Manifests" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="75" y="80" width="130" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="github_actions" value="GitHub Actions Pipeline" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="75" y="140" width="130" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- IaC -->
+        <mxCell id="iac_box" value="Infrastructure as Code" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="40" width="200" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="terraform" value="Terraform (Azure VMs)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="355" y="80" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ansible" value="Ansible (Docker/K3s)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="355" y="140" width="130" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- DockerHub -->
+        <mxCell id="dockerhub" value="DockerHub Registry" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="40" y="240" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Azure Cloud -->
+        <mxCell id="azure_box" value="Azure Cloud Infrastructure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="240" width="480" height="300" as="geometry" />
+        </mxCell>
+        
+        <!-- Master Node -->
+        <mxCell id="master_node" value="Master Node (Standard_B1s)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="340" y="280" width="200" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="k3s_master" value="k3s Control Plane" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
+          <mxGeometry x="360" y="320" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pod_api1" value="Pod: Node.js API (Rep 1)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="360" y="370" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pod_mongo" value="Pod: MongoDB" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="360" y="420" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="docker_m" value="Docker Engine" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="360" y="470" width="160" height="30" as="geometry" />
+        </mxCell>
+        
+        <!-- Worker Node -->
+        <mxCell id="worker_node" value="Worker Node (Standard_B1s)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="580" y="280" width="200" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="k3s_worker" value="k3s Agent" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
+          <mxGeometry x="600" y="320" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pod_api2" value="Pod: Node.js API (Rep 2)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="600" y="370" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="pod_grafana" value="Prometheus &amp; Grafana" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffd966;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="600" y="420" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="docker_w" value="Docker Engine" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="600" y="470" width="160" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <mxCell id="edge1" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="github_repo" target="github_actions">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" value="Push Image" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="github_actions" target="dockerhub">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" value="Provision VMs" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="terraform" target="azure_box">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" value="" style="endArrow=classic;html=1;rounded=0;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="terraform" target="ansible">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" value="kubectl apply via SSH" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="github_actions" target="k3s_master">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" value="Internal Network" style="endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="master_node" target="worker_node">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

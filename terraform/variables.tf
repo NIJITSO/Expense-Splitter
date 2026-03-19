@@ -1,19 +1,24 @@
 variable "resource_group_name" {
-  description = "Nom du groupe de ressources Azure"
-  default     = "expense-splitter-rg"
+  description = "Name of the resource group"
+  default     = "devops-project-eu"
 }
 
 variable "location" {
-  description = "Région Azure"
-  default     = "francecentral"
+  description = "Azure Region"
+  default     = "northeurope"
+}
+
+variable "vm_size" {
+  description = "Size of the VMs"
+  default     = "Standard_D2s_v3"
 }
 
 variable "admin_username" {
-  description = "Nom d'utilisateur admin pour les VMs"
+  description = "Admin username for the VMs"
   default     = "azureuser"
 }
 
-variable "admin_password" {
-  description = "Mot de passe pour les VMs (uniquement pour le lab, ssh key préférée en prod)"
-  default     = "P@ssw0rd1234!" # Demande un mdp complexe
+variable "ssh_public_key_path" {
+  description = "Path to the public SSH key"
+  default     = "~/.ssh/id_rsa.pub"
 }
