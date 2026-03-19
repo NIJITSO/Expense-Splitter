@@ -121,3 +121,32 @@ Dès que la démonstration (ou la note) est finie, il faut **TUTTÉRALEMENT DÉT
 cd terraform
 terraform destroy -auto-approve
 ```
+
+---
+
+## 📁 L'Anatomie du Répertoire DevOps
+Pour ta soutenance de projet, voici le découpage académique de ton code Cloud. À quoi sert chaque dossier exactement ?
+
+### 1. `terraform/` (Infrastructure as Code)
+Ce dossier est responsable de la **création du "matériel brut"**.
+- `main.tf` : C'est le plan de construction de l'architecture. Il demande à Azure d'allouer de la mémoire, un disque dur et une carte réseau pour le Master et le Worker, ainsi qu'un réseau interne (`vnet`).
+- `variables.tf` : Contient les paramètres ajustables (comme la région `northeurope` qu'on a pu modifier à la volée) pour éviter de tout coder en dur.
+- `outputs.tf` : Récupère les adresses IP publiques générées par Azure pour qu'on puisse les utiliser dans l'étape suivante.
+
+### 2. `ansible/` (Configuration as Code)
+Une fois les machines nues et vides créées sur Azure, Ansible prend le relais pour les **configurer de l'intérieur**.
+- `inventory.ini` : L'annuaire. Il indique à Ansible sur quelles adresses IP se connecter et avec quelle configuration (notamment de toujours forcer l'usage de notre clé sécurisée `~/.ssh/id_rsa`).
+- `playbook.yml` : Le script d'orchestration. Il se connecte d'abord au Master pour y installer K3s (Kubernetes allégé), puis il va chercher un jeton de sécurité généré sur le Master, puis il se connecte au Worker pour y installer la même chose et le rattacher au Master en utilisant ce jeton !
+
+### 3. `k8s/` (Kubernetes Manifests)
+Ces fichiers s'occupent de ton **Déploiement Logiciel**. Ils disent à Kubernetes "Comment" faire tourner chaque brique (frontend, backend, base de données) de façon indépendante, pour que si l'un d'eux plante sur un nœud, Kubernetes le ressuscite ailleurs automatiquement.
+- `mongo-`.yaml : Ordonne à Kubernetes de télécharger l'image officielle de MongoDB, de lui créer un stockage temporaire (`emptyDir`), et de le rendre accessible **uniquement** aux autres serveurs internes via le cluster IP (port 27017).
+- `app-`.yaml : Ordonne à K8s de télécharger *ta propre image* Node.js (`nijitso/expense-splitter`) depuis internet (Docker Hub). Puis, le "service" NodePort ouvre une vraie porte (`30080`) au monde extérieur pour qu'on t'y accède directement depuis des vrais navigateurs sur le port 80 (HTTP par défaut).
+
+### 4. `.github/workflows/` (Pipeline CI/CD GitOps)
+C'est le **Robot de Déploiement** de GitHub Actions.
+- `ci-cd.yml` : Dès que tu fais un `git push` vers le serveur (GitHub), ce fichier se déclenche et commande à une machine de GitHub de re-compiler tout ton code (`npm ci`, `npm test`), puis d'assembler la nouvelle image Docker, puis de se connecter sur le profil `nijitso` pour l'envoyer sur internet. Enfin, il se lie lui-même par Internet (avec le secret de ta clé et IP que tu lui as donnés) directement sur ton serveur Master pour y lancer le `kubectl apply` mis à jour, en totale automatisation !
+
+### 5. `Dockerfile` (Conteneurisation Multi-Plateforme)
+C'est la **recette de cuisine** technologique.
+Ton app Node.js a besoin de centaines de fichiers dans son `node_modules` et d'une version précise de Node. Docker prend tes fichiers sources persos, installe un mini système Alpine Linux invisible (de quelques mégaoctets !), compile tes bibliothèques, puis fabrique une boîte hermétique isolée du monde de ton ordinateur (`le conteneur`). L'avantage ultime est que grâce à ce fichier, ton app marchera à 100% de la même manière sur ton PC Windows, sur ton Mac, sur un serveur AWS et sur ton Master Azure, sans jamais avoir le moindre conflit de dépendance !
