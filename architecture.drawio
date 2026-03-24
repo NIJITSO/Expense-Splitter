@@ -38,7 +38,7 @@
         </mxCell>
         
         <!-- Master Node -->
-        <mxCell id="master_node" value="Master Node (Standard_B1s)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+        <mxCell id="master_node" value="Master Node (Standard_D2s_v3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
           <mxGeometry x="340" y="280" width="200" height="230" as="geometry" />
         </mxCell>
         <mxCell id="k3s_master" value="k3s Control Plane" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">
@@ -55,7 +55,7 @@
         </mxCell>
         
         <!-- Worker Node -->
-        <mxCell id="worker_node" value="Worker Node (Standard_B1s)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+        <mxCell id="worker_node" value="Worker Node (Standard_D2s_v3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
           <mxGeometry x="580" y="280" width="200" height="230" as="geometry" />
         </mxCell>
         <mxCell id="k3s_worker" value="k3s Agent" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;" vertex="1" parent="1">

@@ -29,7 +29,7 @@ flowchart TD
     %% Cloud Infrastructure
     subgraph Azure ["Azure Cloud Infrastructure"]
         
-        subgraph Master ["Master Node (Ubuntu : Standard_B1s)"]
+        subgraph Master ["Master Node (Ubuntu : Standard_D2s_v3)"]
             dockerM["Docker Engine"]:::docker
             k3sM["K3s Control Plane"]:::k8s
             pod1["Pod: Node.js API Replica 1"]
@@ -40,7 +40,7 @@ flowchart TD
             k3sM --- podMongo
         end
         
-        subgraph Worker ["Worker Node (Ubuntu : Standard_B1s)"]
+        subgraph Worker ["Worker Node (Ubuntu : Standard_D2s_v3)"]
             dockerW["Docker Engine"]:::docker
             k3sW["K3s Agent"]:::k8s
             pod2["Pod: Node.js API Replica 2"]
